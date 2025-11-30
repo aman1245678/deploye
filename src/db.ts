@@ -16,11 +16,10 @@ const db = new DataSource({
   entities: [modelsPath],
   poolSize: CONFIG.DB_POOL_SIZE,
   
-  ssl: CONFIG.PRODUCTION
-    ? {
-        rejectUnauthorized: false, // Required for PlanetScale/Cloud SQL
-      }
-    : false,
+ ssl: {
+  rejectUnauthorized: true,
+},
+
 });
 
 export default db;
