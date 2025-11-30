@@ -1,5 +1,6 @@
 import { body, param, query } from "express-validator";
 import { ORDER_TYPE } from "../constants";
+import { Request } from "express";
 
 export const categoryValidator = [
   body("name").notEmpty().trim().withMessage("Name is required"),
@@ -221,34 +222,22 @@ export const inventoryValidator = [
     .withMessage("Product.id must be a number"),
 ];
 
-export const orderValidator = [
+  export const orderValidator = [
   body("items")
-    .custom((input, { req }) => {
-      const items = JSON.parse(req.body.items) as {
-        productId: number;
-        quantity: number;
-      }[];
+    .custom((input, { req }: { req: Request }) => {
+      const items = JSON.parse(req.body.items);
 
-      if (items.length > 0) return true;
-
-      return false;
+      return items.length > 0;
     })
     .withMessage("At least 1 item is required"),
+
   body("items")
-    .custom((input, { req }) => {
-      const items = JSON.parse(req.body.items) as {
-        productId: number;
-        quantity: number;
-      }[];
+    .custom((input, { req }: { req: Request }) => {
+      const items = JSON.parse(req.body.items);
 
       for (const item of items) {
-        const keys = Object.keys(item);
-        const hasAllKeys =
-          keys.includes("productId") && keys.includes("quantity");
-
-        if (!hasAllKeys) return false;
+        if (!item.productId || !item.quantity) return false;
       }
-
       return true;
     })
     .withMessage(

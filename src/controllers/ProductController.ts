@@ -1,3 +1,5 @@
+import type * as Express from "express";
+
 import { raw, Request, Response, Router } from "express";
 import asyncHandler from "../middleware/AsyncHandler";
 import {
