@@ -3,6 +3,8 @@
 public
 
 # Compiled output
+.env
+
 /dist
 /tmp
 /out-tsc
