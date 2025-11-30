@@ -18,7 +18,7 @@ const db = new DataSource({
   
   ssl: CONFIG.PRODUCTION
     ? {
-        rejectUnauthorized: true, // Required for PlanetScale/Cloud SQL
+        rejectUnauthorized: false, // Required for PlanetScale/Cloud SQL
       }
     : false,
 });
