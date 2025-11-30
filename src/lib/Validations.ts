@@ -1,3 +1,5 @@
+import type * as Express from "express";
+
 import { body, param, query } from "express-validator";
 import { ORDER_TYPE } from "../constants";
 import { Request } from "express";
