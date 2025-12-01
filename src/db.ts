@@ -9,7 +9,7 @@ const db = new DataSource({
   type: "mysql",
   url: CONFIG.DB_URL,
 
-  synchronize: true,  // only for first time initialization
+  synchronize: false,  // only for first time initialization
   dropSchema: false,
 
   entities: [modelsPath],
