@@ -107,7 +107,15 @@ export const employeeValidator = [
     .withMessage("Image is required"),
   body("image")
     .custom((input, { req }) => {
-      const file = req.file as Express.Multer.File;
+interface UploadedFile {
+  mimetype: string;
+  filename?: string;
+  originalname?: string;
+  path?: string;
+  key?: string;
+}
+
+const file = req.file as UploadedFile;
       switch (file.mimetype) {
         case "image/png":
           return true;
@@ -226,7 +234,7 @@ export const inventoryValidator = [
 
   export const orderValidator = [
   body("items")
-    .custom((input, { req }: { req: Request }) => {
+.custom((input, { req }) => {
       const items = JSON.parse(req.body.items);
 
       return items.length > 0;
@@ -234,7 +242,7 @@ export const inventoryValidator = [
     .withMessage("At least 1 item is required"),
 
   body("items")
-    .custom((input, { req }: { req: Request }) => {
+.custom((input, { req }) => {
       const items = JSON.parse(req.body.items);
 
       for (const item of items) {

@@ -42,6 +42,20 @@ import AppDataSource from "../db";
 import Favourites from "../models/Favourites";
 
 const router = Router();
+interface UploadedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination?: string;
+  filename?: string;
+  path?: string;
+  buffer?: Buffer;
+  key?: string;
+  location?: string;
+}
+
 
 /**
  * There will be a chain of validators for every post or patch requests
@@ -311,7 +325,7 @@ router.post(
     TABLE_NAMES.SUBCATEGORY
   ),
   asyncHandler(async (req: Request, res: Response) => {
-    const images = req.files as Express.MulterS3.File[];
+const images = req.files as UploadedFile[];
     const productImages = [] as ProductImage[];
     let isFirst = true;
     const emptyProduct = {} as Product;
@@ -388,7 +402,7 @@ router.patch(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { categoryId, subCategoryId } = req.body;
-    const uploadedFiles = req.files as Express.Multer.File[];
+const uploadedFiles = req.files as UploadedFile[];
 
     const product = await Product.findOne({
       where: { id: parseInt(id) },
