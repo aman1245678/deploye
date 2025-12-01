@@ -84,8 +84,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://your-frontend-domain.com"
-    ],
+"https://deploye-fgvv.onrender.com"    ],
     credentials: true,
   })
 );
