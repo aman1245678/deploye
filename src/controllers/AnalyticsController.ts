@@ -359,34 +359,36 @@ router.get(
     const { startDate, endDate } = req.query;
 
     const totalsQa = `SELECT 
-      (
-          (SELECT COUNT(ro.id) FROM retailer_orders AS ro 
-           WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0)
-          +
-          (SELECT COUNT(o.id) FROM orders AS o 
-           WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0)
-      ) AS orders,
-      (
-          SELECT COUNT(DISTINCT buyer_id) FROM (
-              SELECT DISTINCT ro.retailerId AS buyer_id
-              FROM retailer_orders ro
-              WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0
-              
-              UNION
-              
-              SELECT DISTINCT o.customerId AS buyer_id
-              FROM orders o
-              WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0
-          ) unique_buyers
-      ) AS customers,
-      (
-          (SELECT COUNT(ro.id) FROM retailer_orders AS ro 
-           WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0)
-          +
-          (SELECT COUNT(o.id) FROM orders AS o 
-           WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0)
-      ) AS total_quantity;
-    `;
+    (
+        (SELECT COUNT(ro.id) FROM retailer_orders AS ro 
+         WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0)
+        +
+        (SELECT COUNT(o.id) FROM orders AS o 
+         WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0)
+    ) AS orders, 
+
+    (
+        SELECT COUNT(DISTINCT buyer_id) FROM (
+            SELECT DISTINCT ro.retailerId AS buyer_id
+            FROM retailer_orders ro
+            WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0
+            
+            UNION
+            
+            SELECT DISTINCT o.customerId AS buyer_id
+            FROM orders o
+            WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0
+        ) unique_buyers
+    ) AS customers,
+
+    (
+        (SELECT COUNT(ro.id) FROM retailer_orders AS ro 
+         WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0)
+        +
+        (SELECT COUNT(o.id) FROM orders AS o 
+         WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0)
+    ) AS total_quantity
+;`;
 
     const [total] = await db.query(totalsQa, [
       startDate, endDate,
@@ -398,23 +400,23 @@ router.get(
     ]);
 
     const graphDataQA = `SELECT 
-      order_date,
-      SUM(total_quantity) AS total_quantity
-      FROM (
-          SELECT DATE(ro.orderReceivedDate) AS order_date, COUNT(ro.id) AS total_quantity
-          FROM retailer_orders ro
-          WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0
-          GROUP BY DATE(ro.orderReceivedDate)
-          
-          UNION ALL
-          
-          SELECT DATE(o.orderReceivedDate) AS order_date, COUNT(o.id) AS total_quantity
-          FROM orders o
-          WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0
-          GROUP BY DATE(o.orderReceivedDate)
-      ) combined_orders
-      GROUP BY order_date
-      ORDER BY order_date ASC;
+    order_date, 
+    SUM(total_quantity) AS total_quantity
+    FROM (
+        SELECT DATE(ro.orderReceivedDate) AS order_date, COUNT(ro.id) AS total_quantity
+        FROM retailer_orders ro
+        WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0
+        GROUP BY DATE(ro.orderReceivedDate)
+        
+        UNION ALL
+        
+        SELECT DATE(o.orderReceivedDate) AS order_date, COUNT(o.id) AS total_quantity
+        FROM orders o
+        WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0
+        GROUP BY DATE(o.orderReceivedDate)
+    ) combined_orders
+    GROUP BY order_date
+    ORDER BY order_date ASC;
     `;
 
     const graphData = await db.query(graphDataQA, [
@@ -423,37 +425,37 @@ router.get(
     ]);
 
     const productsQa = `
-      SELECT 
-          product_id,
-          SUM(total_quantity) AS total_quantity,
-          GROUP_CONCAT(DISTINCT combined_sizes SEPARATOR ', ') AS combined_sizes,
-          GROUP_CONCAT(DISTINCT combined_country SEPARATOR ', ') AS combined_country
-      FROM (
-          SELECT 
-              ro.StyleNo AS product_id,
-              COUNT(ro.id) AS total_quantity,
-              ro.Size AS combined_sizes,
-              ro.size_country AS combined_country
-          FROM retailer_orders ro
-          WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0 AND ro.StyleNo IS NOT NULL
-          GROUP BY ro.StyleNo, ro.Size, ro.size_country
-          
-          UNION ALL
-          
-          SELECT 
-              os.styleNo AS product_id,
-              SUM(os.quantity) AS total_quantity,
-              os.size AS combined_sizes,
-              os.sizeCountry AS combined_country
-          FROM orders o
-          INNER JOIN orderStyles os ON o.id = os.orderId
-          WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0 AND os.styleNo IS NOT NULL
-          GROUP BY os.styleNo, os.size, os.sizeCountry
-      ) combined_products
-      GROUP BY product_id
-      HAVING total_quantity > 0
-      ORDER BY total_quantity DESC
-      LIMIT 20;
+    SELECT 
+        product_id,
+        SUM(total_quantity) AS total_quantity,
+        GROUP_CONCAT(DISTINCT combined_sizes SEPARATOR ', ') AS combined_sizes,  
+        GROUP_CONCAT(DISTINCT combined_country SEPARATOR ', ') AS combined_country
+    FROM (
+        SELECT 
+            ro.StyleNo AS product_id,
+            COUNT(ro.id) AS total_quantity,
+            ro.Size AS combined_sizes,
+            ro.size_country AS combined_country
+        FROM retailer_orders ro
+        WHERE ro.orderReceivedDate BETWEEN ? AND ? AND ro.status = 0 AND ro.StyleNo IS NOT NULL
+        GROUP BY ro.StyleNo, ro.Size, ro.size_country
+        
+        UNION ALL
+        
+        SELECT 
+            os.styleNo AS product_id,
+            SUM(os.quantity) AS total_quantity,
+            os.size AS combined_sizes,
+            os.sizeCountry AS combined_country
+        FROM orders o
+        INNER JOIN orderStyles os ON o.id = os.orderId
+        WHERE o.orderReceivedDate BETWEEN ? AND ? AND o.status = 0 AND os.styleNo IS NOT NULL
+        GROUP BY os.styleNo, os.size, os.sizeCountry
+    ) combined_products
+    GROUP BY product_id
+    HAVING total_quantity > 0
+    ORDER BY total_quantity DESC
+    LIMIT 20;
     `;
 
     const productData = await db.query(productsQa, [
@@ -461,6 +463,8 @@ router.get(
       startDate, endDate,
     ]);
 
+
+    // 🔥 NEW REVENUE SQL (Only Added)
     const revenueQuery = `
       SELECT
         (
@@ -485,29 +489,21 @@ router.get(
       startDate, endDate,
     ]);
 
-    const normalize = (data: any) =>
-      Array.isArray(data) && Array.isArray(data[0]) ? data[0] : data;
-
-    const normalizedRevenue = normalize(revenueResult)[0] || {};
-
     const totalRevenue =
-      (normalizedRevenue.retailer_revenue || 0) +
-      (normalizedRevenue.online_revenue || 0);
+      (revenueResult?.retailer_revenue || 0) +
+      (revenueResult?.online_revenue || 0);
 
+
+    // 🔥 Updated Response (ONLY ADDED revenue)
     res.json({
       success: true,
-      total: normalize(total)[0] || {
-        orders: 0,
-        customers: 0,
-        total_quantity: 0,
-      },
-      graphData: normalize(graphData) || [],
-      productData: normalize(productData) || [],
-      revenue: Number(totalRevenue) || 0,
+      productData,
+      total,
+      graphData,
+      revenue: totalRevenue,
     });
   })
 );
-
 
 
 export default router;
